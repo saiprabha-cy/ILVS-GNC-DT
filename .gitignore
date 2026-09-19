@@ -1,0 +1,15 @@
+*.asv
+*.mex*
+slprj/
+*_ert_rtw/
+*.slxc
+*.autosave
+octave-workspace
+crossval_input.csv
+crossval_output.csv
+vector_runner
+vector_runner.exe
+test_harness
+test_harness.exe
+*.o
+.DS_Store
