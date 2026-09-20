@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ILVS-GNC-DT — Mission Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080b10; --bg2:#0d121a; --bg3:#131a24;
+    --line:#223047; --lineBright:#35486a;
+    --text:#e8edf4; --dim:#90a0b7; --faint:#5c6b82;
+    --cyan:#5fc0ee; --amber:#ff8a3d; --green:#5fd98a; --red:#e2604f;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --disp: 'Space Grotesk', sans-serif;
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top,0px);
+    padding-bottom: env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:inherit;}
+  html{scroll-padding-top:24px;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--mono); font-size:15px; line-height:1.65;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    background-attachment:fixed;
+    background-color:var(--bg);
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} }
+
+  h1,h2,h3{font-family:var(--disp); font-weight:600; margin:0 0 0.5em; letter-spacing:-0.01em;}
+  p{margin:0 0 1em; color:var(--dim); max-width:70ch;}
+  a{color:var(--cyan);}
+  code{color:var(--amber); font-size:0.92em;}
+
+  .rail{
+    position:fixed; top:0; left:0; bottom:0; width:180px;
+    border-right:1px solid var(--line); background:rgba(8,11,16,0.85); backdrop-filter:blur(6px);
+    padding:28px 0 28px 26px; display:flex; flex-direction:column; gap:2px; z-index:50;
+  }
+  .rail-title{font-family:var(--disp); font-size:13px; color:var(--faint); margin-bottom:18px; letter-spacing:0.04em;}
+  .rail a{
+    display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--faint);
+    font-size:12.5px; padding:6px 0; border-left:2px solid transparent; padding-left:10px;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .rail a .dot{width:6px;height:6px;border-radius:50%;background:var(--line);flex:none;transition:background .15s ease;}
+  .rail a.active{color:var(--text); border-left-color:var(--cyan);}
+  .rail a.active .dot{background:var(--cyan); box-shadow:0 0 8px var(--cyan);}
+  .rail a:hover{color:var(--text);}
+  @media (max-width:980px){ .rail{display:none;} }
+
+  main{margin-left:180px; max-width:900px; padding:64px 48px 120px;}
+  @media (max-width:980px){ main{margin-left:0; padding:40px 22px 90px;} }
+
+  section{padding:64px 0; border-bottom:1px solid var(--line);}
+  section:last-of-type{border-bottom:none;}
+  .kicker{font-family:var(--disp); font-size:13px; color:var(--amber); margin-bottom:10px;}
+  h2{font-size:28px; color:var(--text);}
+  h3{font-size:17px; color:var(--text); margin-top:1.6em;}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:40px 0 70px; border-bottom:1px solid var(--line); position:relative;}
+  .hero-top{display:flex; justify-content:space-between; align-items:flex-start; gap:24px; flex-wrap:wrap;}
+  .hero h1{font-size:44px; line-height:1.05;}
+  .hero .sub{font-size:16px; color:var(--dim); max-width:52ch; margin-top:14px;}
+  .patch{
+    width:104px;height:104px;border-radius:50%;
+    border:1px solid var(--lineBright);
+    display:flex;align-items:center;justify-content:center;flex:none;
+    background:radial-gradient(circle at 50% 30%, #101823, #080b10 72%);
+  }
+  .readout{
+    display:flex; gap:0; margin-top:34px; flex-wrap:wrap;
+    border:1px solid var(--line); border-radius:2px; overflow:hidden;
+  }
+  .readout div{padding:14px 20px; border-right:1px solid var(--line); flex:1; min-width:140px;}
+  .readout div:last-child{border-right:none;}
+  .readout .label{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;}
+  .readout .val{font-family:var(--disp); font-size:17px; color:var(--green);}
+  .readout .val.amber{color:var(--amber);}
+
+  .rocket-hero{position:relative; height:150px; margin-top:8px;}
+  .rocket-hero svg{position:absolute; left:50%; bottom:0; transform:translateX(-50%); height:150px;}
+  .flame{animation:flick 0.5s infinite alternate ease-in-out; transform-origin:50% 0%;}
+  @keyframes flick{ from{transform:scaleY(1) scaleX(1);} to{transform:scaleY(1.18) scaleX(0.92);} }
+
+  /* ---------- GENERIC ---------- */
+  .lede{font-size:16px; color:var(--text); max-width:66ch;}
+  ul.plain{margin:0 0 1em; padding-left:1.2em; color:var(--dim);}
+  ul.plain li{margin-bottom:6px;}
+
+  .spec{width:100%; border-collapse:collapse; margin:18px 0; font-size:13.5px;}
+  .spec th{text-align:left; color:var(--faint); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; padding:8px 14px 8px 0; border-bottom:1px solid var(--line);}
+  .spec td{padding:10px 14px 10px 0; border-bottom:1px solid var(--line); color:var(--dim); vertical-align:top;}
+  .spec td:first-child{color:var(--text); white-space:nowrap;}
+  .spec tr:last-child td{border-bottom:none;}
+  .status-pass{color:var(--green); font-weight:600;}
+
+  /* ---------- ARCHITECTURE: rocket stack ---------- */
+  .stack-wrap{display:flex; gap:36px; margin-top:32px; align-items:flex-start; flex-wrap:wrap;}
+  .stack-svg-holder{flex:none; width:220px;}
+  .stack-detail{flex:1; min-width:280px; border:1px solid var(--line); border-radius:2px; padding:22px 24px; background:var(--bg2); min-height:220px;}
+  .stack-detail .tag{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;}
+  .stack-detail h4{font-family:var(--disp); font-size:18px; margin:0 0 10px; color:var(--text);}
+  .stack-detail p{font-size:13.5px; margin-bottom:10px;}
+  .stack-detail .files{font-size:12px; color:var(--cyan);}
+  .band{cursor:pointer; transition:opacity .15s ease;}
+  .band:hover{opacity:0.85;}
+  .band.active rect, .band.active path.band-shape{stroke:var(--amber); stroke-width:2;}
+  .band-label{font-family:var(--mono); font-size:9.5px; fill:var(--faint); pointer-events:none;}
+  .controls{margin-top:18px; display:flex; gap:10px; align-items:center;}
+  button.trace-btn{
+    font-family:var(--mono); font-size:12.5px; color:var(--text); background:var(--bg3);
+    border:1px solid var(--lineBright); border-radius:2px; padding:9px 16px; cursor:pointer;
+  }
+  button.trace-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+  .controls .note{font-size:11.5px; color:var(--faint);}
+
+  /* ---------- LOG ---------- */
+  .log-entry{display:grid; grid-template-columns:90px 1fr; gap:18px; padding:18px 0; border-bottom:1px solid var(--line);}
+  .log-entry:last-child{border-bottom:none;}
+  .log-entry .tstamp{font-size:11.5px; color:var(--faint); padding-top:3px;}
+  .log-entry .body h4{font-family:var(--disp); font-size:15px; margin:0 0 6px; color:var(--text);}
+  .log-entry .body p{font-size:13.5px; margin-bottom:6px;}
+  .fix-tag{display:inline-block; font-size:10.5px; padding:2px 8px; border:1px solid var(--green); color:var(--green); border-radius:2px; margin-top:4px;}
+
+  /* ---------- TOPICS ---------- */
+  .domain{margin-bottom:26px;}
+  .domain h4{font-family:var(--disp); font-size:14px; color:var(--cyan); margin:0 0 10px; letter-spacing:0.02em;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{font-size:12px; color:var(--dim); border:1px solid var(--line); padding:5px 11px; border-radius:2px;}
+
+  /* ---------- PORTFOLIO ---------- */
+  .repo{display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line); gap:16px;}
+  .repo:last-child{border-bottom:none;}
+  .repo a{font-family:var(--disp); font-size:15px; text-decoration:none;}
+  .repo .desc{font-size:12.5px; color:var(--faint); text-align:right;}
+  .repo.this-one a{color:var(--amber);}
+
+  footer{padding:40px 48px 60px; margin-left:180px; color:var(--faint); font-size:12px;}
+  @media (max-width:980px){ footer{margin-left:0; padding:30px 22px 50px;} }
+</style>
+</head>
+<body>
+
+<nav class="rail">
+  <div class="rail-title">MISSION SEQUENCE</div>
+  <a href="#overview"><span class="dot"></span>Overview</a>
+  <a href="#architecture"><span class="dot"></span>Architecture</a>
+  <a href="#approach"><span class="dot"></span>Engineering</a>
+  <a href="#results"><span class="dot"></span>Flight Data</a>
+  <a href="#log"><span class="dot"></span>Engineering Log</a>
+  <a href="#topics"><span class="dot"></span>Knowledge Domains</a>
+  <a href="#portfolio"><span class="dot"></span>Portfolio</a>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="kicker">FLIGHT REPORT · ILVS-GNC-DT</div>
+        <h1>Launch Vehicle Ascent &amp;<br>Insertion GNC Digital Twin</h1>
+        <p class="sub">A liftoff-through-MECO powered-ascent simulator — atmospheric flight, closed-loop gravity-turn guidance, discrete staging, and orbital insertion targeting — with the pitch guidance law cross-compiled through Embedded Coder and verified against an independent, hand-written C implementation.</p>
+      </div>
+      <div class="patch">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="33" fill="none" stroke="#35486a" stroke-width="1"/>
+          <circle cx="35" cy="35" r="26" fill="none" stroke="#223047" stroke-width="1"/>
+          <path d="M35 14 L40 44 L35 40 L30 44 Z" fill="#e8edf4"/>
+          <path d="M31 44 L27 54 L31 50 Z" fill="#ff8a3d"/>
+          <path d="M39 44 L43 54 L39 50 Z" fill="#ff8a3d"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div><div class="label">MECO velocity</div><div class="val">5157.9 m/s</div></div>
+      <div><div class="label">Max‑Q</div><div class="val">45.31 kPa</div></div>
+      <div><div class="label">Pitch RMS error</div><div class="val">0.058 deg</div></div>
+      <div><div class="label">Embedded Coder codegen</div><div class="val">PASS</div></div>
+      <div><div class="label">MATLAB ↔ C agreement</div><div class="val amber">8.0e-11</div></div>
+    </div>
+
+    <div class="rocket-hero" aria-hidden="true">
+      <svg viewBox="0 0 60 150">
+        <g class="flame">
+          <path d="M22 118 Q30 150 38 118 Q30 130 22 118 Z" fill="#ff8a3d"/>
+          <path d="M25 118 Q30 138 35 118 Q30 126 25 118 Z" fill="#ffd18a"/>
+        </g>
+        <rect x="18" y="46" width="24" height="72" fill="#0d121a" stroke="#35486a"/>
+        <path d="M30 6 L42 46 L18 46 Z" fill="#131a24" stroke="#35486a"/>
+        <path d="M18 100 L6 122 L18 116 Z" fill="#131a24" stroke="#35486a"/>
+        <path d="M42 100 L54 122 L42 116 Z" fill="#131a24" stroke="#35486a"/>
+        <circle cx="30" cy="60" r="5" fill="none" stroke="#5fc0ee" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <section id="overview">
+    <div class="kicker">01 — OVERVIEW</div>
+    <h2>What this project is, and why it's scoped this way</h2>
+    <p class="lede">Every real launch vehicle solves the same problem this project solves: fly a thrust- and mass-changing vehicle through a drag-bearing atmosphere, close a real-time guidance loop that has to reject disturbances, survive a discrete staging event, and hit a target insertion window — under the fixed-step, deterministic constraints of embedded flight hardware, not just inside a MATLAB script.</p>
+    <p>This project was deliberately rescoped from an original nine-phase, full-mission-lifecycle plan down to one thing done properly: the roughly 200 seconds between engines-light and payload-on-its-way-to-orbit. That's the one flight regime a five-repository sibling portfolio (satellite attitude control, attitude estimation, a CCSDS-style ground segment, embedded flight-computer telemetry, and autonomous ground navigation) didn't already cover — so it became this project's entire scope, rather than a ninth of a broader one.</p>
+    <table class="spec">
+      <tr><th>Domain</th><th>What's demonstrated</th></tr>
+      <tr><td>Flight dynamics</td><td>3-DOF translation through a drag-bearing atmosphere, coupled to single-axis pitch attitude via angle of attack</td></tr>
+      <tr><td>Guidance &amp; control</td><td>Open-loop pitch program tracked by a closed-loop discrete PID, cross-validated in three independent implementations</td></tr>
+      <tr><td>Staging</td><td>A discrete-event state machine driving a continuous simulation, not folded into the ODE</td></tr>
+      <tr><td>Embedded systems</td><td>The guidance law generated as portable C via Embedded Coder, confirmed to compile, link, and run</td></tr>
+      <tr><td>Verification</td><td>Energy conservation to machine precision, PID agreement to 8e-11, full codegen success — all from real executed runs</td></tr>
+    </table>
+  </section>
+
+  <section id="architecture">
+    <div class="kicker">02 — ARCHITECTURE</div>
+    <h2>System architecture</h2>
+    <p class="lede">The software is organized the way the vehicle itself is: layered, bottom to top, from the physical environment up through guidance to the telemetry that reports on all of it. Select a stage below.</p>
+
+    <div class="stack-wrap">
+      <div class="stack-svg-holder">
+        <svg viewBox="0 0 220 480" width="220" height="480">
+          <path id="tracePath" d="M110 470 L110 20" fill="none" stroke="none"/>
+
+          <!-- exhaust -->
+          <g id="band-exhaust" class="band" data-band="exhaust">
+            <path class="flame" d="M92 440 Q110 480 128 440 Q110 458 92 440 Z" fill="#ff8a3d"/>
+          </g>
+
+          <!-- environment / integration core (engines) -->
+          <g class="band" data-band="engines">
+            <path class="band-shape" d="M78 400 L142 400 L150 440 L70 440 Z" fill="#131a24" stroke="#35486a"/>
+            <text x="110" y="424" text-anchor="middle" class="band-label">ENGINES · RK4 CORE</text>
+          </g>
+
+          <!-- environment models -->
+          <g class="band" data-band="environment">
+            <rect class="band-shape" x="66" y="340" width="88" height="56" fill="#0d121a" stroke="#35486a"/>
+            <text x="110" y="372" text-anchor="middle" class="band-label">ENVIRONMENT</text>
+          </g>
+
+          <!-- dynamics + staging (stage 1) -->
+          <g class="band" data-band="dynamics">
+            <rect class="band-shape" x="66" y="250" width="88" height="86" fill="#10151f" stroke="#35486a"/>
+            <text x="110" y="296" text-anchor="middle" class="band-label">DYNAMICS + STAGING</text>
+          </g>
+
+          <!-- interstage -->
+          <rect x="80" y="238" width="60" height="8" fill="#080b10" stroke="#223047"/>
+
+          <!-- guidance + control (stage 2) -->
+          <g class="band" data-band="control">
+            <rect class="band-shape" x="72" y="150" width="76" height="84" fill="#10151f" stroke="#35486a"/>
+            <text x="110" y="195" text-anchor="middle" class="band-label">GUIDANCE + CONTROL</text>
+          </g>
+
+          <!-- telemetry / fairing -->
+          <g class="band" data-band="telemetry">
+            <rect class="band-shape" x="78" y="90" width="64" height="56" fill="#131a24" stroke="#35486a"/>
+            <text x="110" y="121" text-anchor="middle" class="band-label">TELEMETRY</text>
+          </g>
+
+          <!-- nose cone: visualization / output -->
+          <g class="band" data-band="visualization">
+            <path class="band-shape" d="M110 16 L142 90 L78 90 Z" fill="#131a24" stroke="#35486a"/>
+            <text x="110" y="76" text-anchor="middle" class="band-label">MISSION OUTPUT</text>
+          </g>
+
+          <circle id="tracer" cx="110" cy="440" r="4.5" fill="#ffd18a" opacity="0">
+            <animateMotion id="tracerMotion" path="M0 0 L0 -420" dur="2.4s" begin="indefinite" fill="freeze"/>
+          </circle>
+        </svg>
+        <div class="controls">
+          <button class="trace-btn" onclick="runTrace()">▲ Trace data flow</button>
+        </div>
+        <div class="controls"><span class="note">Click a stage for detail</span></div>
+      </div>
+
+      <div class="stack-detail" id="stackDetail">
+        <div class="tag">Select a stage</div>
+        <h4>Click any segment of the stack</h4>
+        <p>Each segment of the diagram is one layer of the software, drawn in the order data actually flows through it during a run — environment and dynamics at the base, guidance and control above that, telemetry and visualization at the top, the way a payload sits above the stages that got it there.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="approach">
+    <div class="kicker">03 — ENGINEERING APPROACH</div>
+    <h2>How each subsystem works</h2>
+
+    <h3>Environment</h3>
+    <p>A simplified exponential atmosphere (<code>rho0 · e^(-h/H)</code>) and inverse-square gravity (<code>mu/(Re+h)²</code>), non-rotating and spherically symmetric. Deliberately simple — the validation target is dynamic-pressure and drag estimates accurate to the regime that matters for this vehicle, not a full US Standard Atmosphere 1976 table.</p>
+
+    <h3>Dynamics</h3>
+    <p>A 7-state model: altitude, downrange, speed, flight-path angle, pitch attitude, pitch rate, mass. Translation and rotation are coupled only through angle of attack, kept deliberately separable so each could be validated independently — the translational-only equations reduce, with thrust and drag at zero, to pure central-force motion, letting specific mechanical energy conservation stand in as a direct correctness proof of the integrator and the gravity/flight-path-angle terms together.</p>
+
+    <h3>Guidance &amp; control</h3>
+    <p>An open-loop pitch program (vertical rise → pitch-over kick → gravity-turn ramp) is tracked by a discrete PID with explicit, struct-based state — chosen specifically because that calling convention is what a hand-off to Embedded Coder expects, and because explicit state makes the controller unit-testable without anything hidden to reset between cases.</p>
+
+    <h3>Staging</h3>
+    <p>A discrete-event state machine, checked once per integration step rather than folded into the continuous equations — mass, thrust, and aerodynamic properties change instantaneously at separation, which is a different kind of software problem than "what are the forces right now," and is treated as one.</p>
+
+    <h3>Embedded Coder</h3>
+    <p>The closed-loop pitch guidance/control subsystem is built programmatically via the Simulink API, then compiled to portable C through Embedded Coder — proving the algorithm cross-compiles correctly, the same discipline already used elsewhere in this portfolio for attitude estimation, applied here to ascent guidance instead.</p>
+
+    <h3>Telemetry</h3>
+    <p>A thin packet format sharing its CRC-16 polynomial and packet philosophy with this portfolio's existing ground-segment project, deliberately — not a second, competing protocol.</p>
+  </section>
+
+  <section id="results">
+    <div class="kicker">04 — FLIGHT DATA</div>
+    <h2>Confirmed results</h2>
+    <p class="lede">Every number below comes from an actual executed run, not a prediction — confirmed on 2026‑09‑19 in a real MATLAB R2025a installation.</p>
+    <table class="spec">
+      <tr><th>Check</th><th>Result</th><th>Status</th></tr>
+      <tr><td>Environment validation</td><td>Density &amp; gravity match closed-form expectations exactly</td><td class="status-pass">PASS</td></tr>
+      <tr><td>Ballistic energy conservation</td><td>4.541e-15 relative error, 1000 s / 20,000 RK4 steps</td><td class="status-pass">PASS</td></tr>
+      <tr><td>Stage separation</td><td>t = 88.40 s</td><td class="status-pass">—</td></tr>
+      <tr><td>MECO</td><td>t = 255.80 s · alt 337.20 km · V 5157.9 m/s · γ 24.57°</td><td class="status-pass">—</td></tr>
+      <tr><td>Local circular velocity at MECO</td><td>7708.4 m/s (33.1% deficit — by design, see engineering notes)</td><td class="status-pass">—</td></tr>
+      <tr><td>Max dynamic pressure</td><td>45.31 kPa at t = 46.5 s, stage 1</td><td class="status-pass">—</td></tr>
+      <tr><td>RMS pitch tracking error</td><td>0.058 deg, shared untuned-per-stage gains</td><td class="status-pass">PASS</td></tr>
+      <tr><td>Simulink model build</td><td><code>pitch_control_loop.slx</code> builds cleanly</td><td class="status-pass">PASS</td></tr>
+      <tr><td>Embedded Coder codegen</td><td>Generated, compiled, linked to a standalone executable</td><td class="status-pass">PASS</td></tr>
+      <tr><td>MATLAB vs. hand-written C</td><td>8.004e-11 max difference, 2000-sample sequence</td><td class="status-pass">PASS</td></tr>
+    </table>
+  </section>
+
+  <section id="log">
+    <div class="kicker">05 — ENGINEERING LOG</div>
+    <h2>Three real issues, found and fixed by real runs</h2>
+    <p class="lede">Kept as an honest record rather than smoothed over — this is what actually happened between "the code is written" and "the code works."</p>
+
+    <div class="log-entry">
+      <div class="tstamp">ISSUE 01</div>
+      <div class="body">
+        <h4>Persistent state vs. continuous sample time</h4>
+        <p>The PID block's <code>persistent</code> controller state can't inherit a continuous sample time from the blocks around it — Simulink refuses to compile it.</p>
+        <p><span class="fix-tag">FIXED</span> — a Zero-Order Hold inserted upstream forces the block's input to a discrete rate, which resolves its own sample time to discrete. Also the more physically honest model: a real controller samples a continuous plant through an ADC at a fixed rate.</p>
+      </div>
+    </div>
+    <div class="log-entry">
+      <div class="tstamp">ISSUE 02</div>
+      <div class="body">
+        <h4>A parameter that doesn't exist on every MATLAB version</h4>
+        <p>The first fix attempt — setting <code>SampleTime</code> directly on the PID block — itself failed: that block resolves to a generic <code>SubSystem</code> object at the <code>set_param</code> level, which doesn't expose that parameter.</p>
+        <p><span class="fix-tag">FIXED</span> — replaced with the Zero-Order Hold approach above: a core block type with a reliably settable parameter, rather than chasing a version-specific name.</p>
+      </div>
+    </div>
+    <div class="log-entry">
+      <div class="tstamp">ISSUE 03</div>
+      <div class="body">
+        <h4>Continuous-time codegen disabled by default</h4>
+        <p>With the sample-time issue resolved, <code>rtwbuild</code> failed differently: the ERT target disables continuous-time code generation by default, assuming a purely discrete embedded target — but this model's plant genuinely is continuous.</p>
+        <p><span class="fix-tag">FIXED</span> — <code>SupportContinuousTime</code> enabled explicitly. Codegen then succeeded completely, confirmed by a build log showing exactly two sample rates and two continuous states, matching the design intent precisely.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="topics">
+    <div class="kicker">06 — KNOWLEDGE DOMAINS</div>
+    <h2>What this project requires mastering</h2>
+    <p class="lede">Organized by domain, roughly in the order they had to be learned to build this project in the first place.</p>
+
+    <div class="domain">
+      <h4>Flight dynamics &amp; orbital mechanics</h4>
+      <div class="chip-row">
+        <span class="chip">Newtonian point-mass dynamics</span>
+        <span class="chip">Gravity-turn trajectory equations</span>
+        <span class="chip">Flight-path-angle kinematics</span>
+        <span class="chip">Specific mechanical energy &amp; vis-viva</span>
+        <span class="chip">Atmospheric drag &amp; dynamic pressure</span>
+        <span class="chip">Angle of attack &amp; normal force</span>
+        <span class="chip">Staging mass/thrust discontinuities</span>
+        <span class="chip">Orbital insertion targeting</span>
+      </div>
+    </div>
+
+    <div class="domain">
+      <h4>Guidance, navigation &amp; control</h4>
+      <div class="chip-row">
+        <span class="chip">Open-loop guidance programs</span>
+        <span class="chip">PID control theory &amp; tuning</span>
+        <span class="chip">Discrete vs. continuous control</span>
+        <span class="chip">Zero-order hold &amp; sample-rate theory</span>
+        <span class="chip">Actuator/output saturation</span>
+        <span class="chip">Closed-loop tracking-error analysis</span>
+      </div>
+    </div>
+
+    <div class="domain">
+      <h4>Numerical methods</h4>
+      <div class="chip-row">
+        <span class="chip">4th-order Runge-Kutta integration</span>
+        <span class="chip">Fixed- vs. variable-step solvers</span>
+        <span class="chip">Numerical singularity handling</span>
+        <span class="chip">Conservation-law validation</span>
+        <span class="chip">Floating-point error analysis</span>
+      </div>
+    </div>
+
+    <div class="domain">
+      <h4>Embedded systems</h4>
+      <div class="chip-row">
+        <span class="chip">Fixed-step deterministic execution</span>
+        <span class="chip">Explicit-state (non-global) controller design</span>
+        <span class="chip">Embedded Coder / ERT code generation</span>
+        <span class="chip">Portable ANSI C (C89)</span>
+        <span class="chip">Cross-language numerical verification</span>
+        <span class="chip">CRC-16 &amp; packet-level telemetry design</span>
+      </div>
+    </div>
+
+    <div class="domain">
+      <h4>Tooling &amp; workflow</h4>
+      <div class="chip-row">
+        <span class="chip">MATLAB / GNU Octave compatibility</span>
+        <span class="chip">Simulink block-diagram modeling</span>
+        <span class="chip">Simulink API scripting (programmatic model-build)</span>
+        <span class="chip">Software-in-the-Loop verification</span>
+        <span class="chip">Unit testing without a formal framework</span>
+        <span class="chip">Git-ready, documentation-first engineering practice</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="portfolio">
+    <div class="kicker">07 — PORTFOLIO</div>
+    <h2>Part of a six-repository GNC stack</h2>
+    <p class="lede">Each repository owns one distinct, non-overlapping piece of the same problem — a spacecraft's full lifecycle from liftoff to on-orbit operations.</p>
+
+    <div class="repo this-one">
+      <a href="https://github.com/saiprabha-cy/ILVS-GNC-DT" target="_blank" rel="noopener">ILVS-GNC-DT</a>
+      <span class="desc">Powered ascent &amp; insertion GNC — this project</span>
+    </div>
+    <div class="repo">
+      <a href="https://github.com/saiprabha-cy/CubeSat-ADCS-Sim" target="_blank" rel="noopener">CubeSat-ADCS-Sim</a>
+      <span class="desc">Attitude determination &amp; control</span>
+    </div>
+    <div class="repo">
+      <a href="https://github.com/saiprabha-cy/kalman-attitude-estimation" target="_blank" rel="noopener">kalman-attitude-estimation</a>
+      <span class="desc">Multiplicative EKF attitude estimation</span>
+    </div>
+    <div class="repo">
+      <a href="https://github.com/saiprabha-cy/Mission-Operations-Communication-Platform-MOCP" target="_blank" rel="noopener">MOCP</a>
+      <span class="desc">CCSDS-style ground segment</span>
+    </div>
+    <div class="repo">
+      <a href="https://github.com/saiprabha-cy/aerospace-telemetry-flight-computer-platform" target="_blank" rel="noopener">aerospace-telemetry-flight-computer-platform</a>
+      <span class="desc">Embedded flight computer</span>
+    </div>
+    <div class="repo">
+      <a href="https://github.com/saiprabha-cy/planetary-rover-navigation" target="_blank" rel="noopener">planetary-rover-navigation</a>
+      <span class="desc">Autonomous ground mobility</span>
+    </div>
+  </section>
+
+</main>
+
+<footer>ILVS-GNC-DT · Mission report generated from confirmed, executed results · SAIPRABHA C Y</footer>
+
+<script>
+  // Flight-sequence nav highlighting
+  const links = document.querySelectorAll('.rail a');
+  const sections = Array.from(links).map(l => document.querySelector(l.getAttribute('href')));
+  function onScroll(){
+    let idx = 0;
+    const y = window.scrollY + 120;
+    sections.forEach((s, i) => { if(s && s.offsetTop <= y) idx = i; });
+    links.forEach((l,i) => l.classList.toggle('active', i === idx));
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  // Architecture stack: click-to-detail
+  const details = {
+    exhaust: {tag:'Execution core', title:'RK4 Integration', desc:'A generic, dependency-free fixed-step RK4 integrator drives every state forward — reused unchanged for the full 7-state ascent and the isolated ballistic validation case. Fixed-step throughout because the guidance loop later needs to be deterministic enough for Embedded Coder.', files:'src/integration/rk4_step.m'},
+    engines: {tag:'Execution core', title:'RK4 Integration', desc:'A generic, dependency-free fixed-step RK4 integrator drives every state forward — reused unchanged for the full 7-state ascent and the isolated ballistic validation case. Fixed-step throughout because the guidance loop later needs to be deterministic enough for Embedded Coder.', files:'src/integration/rk4_step.m'},
+    environment: {tag:'Base layer', title:'Environment models', desc:'Simplified exponential atmosphere and inverse-square gravity — the forces every other layer builds on. Validated independently against closed-form expected values before anything above it is trusted.', files:'src/environment/atmosphere_density.m · gravity_accel.m'},
+    dynamics: {tag:'Physics layer', title:'Dynamics + staging', desc:'The 7-state ascent equations of motion, plus a discrete-event staging state machine checked once per step. Translation validated in isolation via energy conservation; staging validated via explicit transition unit tests.', files:'src/dynamics/ascent_derivatives.m · src/staging/staging_check.m'},
+    control: {tag:'GNC layer', title:'Guidance + control', desc:'An open-loop pitch program tracked by a discrete PID with explicit state — the exact subsystem ported through Embedded Coder, and cross-validated against a hand-written C reference to 8e-11.', files:'src/guidance/pitch_program.m · src/control/pid_update.m'},
+    telemetry: {tag:'Reporting layer', title:'Telemetry', desc:'A thin packet format with CRC-16, deliberately sharing its structure with the ground-segment project in this portfolio rather than inventing a second protocol.', files:'src/telemetry/pack_telemetry_packet.m'},
+    visualization: {tag:'Output layer', title:'Mission output', desc:'Engineering plots, a 3D trajectory view, and a stage-separation animation — the layer a reviewer actually looks at first, sitting at the top the way a payload sits above the stages that got it there.', files:'src/visualization/*.m'}
+  };
+  document.querySelectorAll('.band').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.band').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const d = details[b.dataset.band];
+      const panel = document.getElementById('stackDetail');
+      panel.innerHTML = `<div class="tag">${d.tag}</div><h4>${d.title}</h4><p>${d.desc}</p><div class="files">${d.files}</div>`;
+    });
+  });
+
+  function runTrace(){
+    const tracer = document.getElementById('tracer');
+    const motion = document.getElementById('tracerMotion');
+    tracer.setAttribute('opacity','1');
+    motion.beginElement();
+    setTimeout(()=>{ tracer.setAttribute('opacity','0'); }, 2500);
+  }
+</script>
+
+</body>
+</html>
